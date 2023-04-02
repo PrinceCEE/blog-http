@@ -1,6 +1,7 @@
 package router
 
 import (
+	Ctrls "blog-http/controllers"
 	"net/http"
 )
 
@@ -8,19 +9,19 @@ func (*Router) GetPostRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// Fetch all the posts, allows filtering
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("/", Ctrls.PostCtrl.GetPosts)
 
 	// Create a new post
-	mux.HandleFunc("/new", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("/new", Ctrls.PostCtrl.NewPost)
 
 	// GET, DELETE or UPDATE the post
-	mux.HandleFunc("/{postID}", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("/{postID}", Ctrls.PostCtrl.HandlePost)
 
 	// like a post
-	mux.HandleFunc("/{postID}/like", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("/{postID}/like", Ctrls.PostCtrl.LikePost)
 
 	// unlike a post
-	mux.HandleFunc("/{postID}/unlike", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("/{postID}/unlike", Ctrls.PostCtrl.UnlikePost)
 
 	return mux
 }

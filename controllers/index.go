@@ -1,3 +1,5 @@
 package controllers
 
-type Controllers struct{}
+var AuthCtrl = AuthController{}
+var PostCtrl = PostController{}
+var CommentCtrl = CommentController{}
