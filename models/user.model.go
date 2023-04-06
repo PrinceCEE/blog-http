@@ -23,7 +23,7 @@ var UserSchemaValidation = bson.M{
 	"$jsonSchema": bson.M{
 		"bsonType":             "object",
 		"additionalProperties": false,
-		"required":             []string{"_id", "firstName", "lastName", "email"},
+		"required":             []string{"_id", "firstName", "lastName", "email", "createdAt"},
 		"properties": bson.M{
 			"_id": bson.M{
 				"bsonType": "objectId",
@@ -39,6 +39,13 @@ var UserSchemaValidation = bson.M{
 			"email": bson.M{
 				"bsonType":    strName,
 				"description": strDesc,
+			},
+			"createdAt": bson.M{
+				"bsonType":    "date",
+				"description": "createdAt is required",
+			},
+			"updatedAt": bson.M{
+				"bsonType": "date",
 			},
 		},
 	},
