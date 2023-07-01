@@ -8,6 +8,7 @@ import (
 func (*Router) GetAuthRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 
+	// all accept POST request
 	mux.HandleFunc("/register", Ctrls.AuthCtrl.Register)
 	mux.HandleFunc("/login", Ctrls.AuthCtrl.Login)
 	mux.HandleFunc("/forgot-password", Ctrls.AuthCtrl.ForgotPassword)

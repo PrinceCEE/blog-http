@@ -10,9 +10,13 @@ func GetRouters() *http.ServeMux {
 	mux := http.NewServeMux()
 	router := Router{}
 
-	mux.Handle("/api/auth/", http.StripPrefix("/api/auth", router.GetAuthRouter()))
-	mux.Handle("/api/posts/", http.StripPrefix("/api/posts", router.GetPostRouter()))
-	mux.Handle("/api/comments/", http.StripPrefix("/api/comments", router.GetCommentRouter()))
+	authRouter := router.GetAuthRouter()
+	postRouter := router.GetPostRouter()
+	commentRouter := router.GetCommentRouter()
+
+	mux.Handle("/api/auth/", http.StripPrefix("/api/auth", authRouter))
+	mux.Handle("/api/posts/", http.StripPrefix("/api/posts", postRouter))
+	mux.Handle("/api/comments/", http.StripPrefix("/api/comments", commentRouter))
 
 	return mux
 }

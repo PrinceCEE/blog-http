@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-
 	srv := &http.Server{
 		Addr:    ":3000",
 		Handler: router.GetRouters(),
@@ -26,11 +25,11 @@ func main() {
 	if err := db.Connect(); err != nil {
 		log.Fatal(err)
 	}
+
 	fmt.Println("Server connected to the DB")
+	fmt.Println("Server listening on PORT: 3001")
 
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println("Server listening on PORT: 3000")
 }
