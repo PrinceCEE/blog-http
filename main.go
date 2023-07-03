@@ -2,6 +2,7 @@ package main
 
 import (
 	"blog-http/db"
+	"blog-http/helpers"
 	"blog-http/router"
 	"fmt"
 	"log"
@@ -11,9 +12,10 @@ import (
 )
 
 func main() {
+	helper := helpers.Helpers{}
 	srv := &http.Server{
 		Addr:    ":3000",
-		Handler: router.GetRouters(),
+		Handler: helper.Logger(router.GetRouters()),
 	}
 
 	// Load the environment variables
