@@ -18,9 +18,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	port := os.Getenv("APP_PORT")
 	helper := helpers.Helpers{}
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", os.Getenv("APP_PORT")),
+		Addr:    fmt.Sprintf(":%s", port),
 		Handler: helper.Logger(router.GetRouters()),
 	}
 
@@ -30,7 +31,7 @@ func main() {
 	}
 
 	fmt.Println("Server connected to the DB")
-	fmt.Println("Server listening on PORT: 3001")
+	fmt.Printf("Server listening on PORT %s\n", port)
 
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
