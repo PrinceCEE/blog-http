@@ -7,20 +7,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	helper := helpers.Helpers{}
-	srv := &http.Server{
-		Addr:    ":3000",
-		Handler: helper.Logger(router.GetRouters()),
-	}
-
 	// Load the environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
+	}
+
+	helper := helpers.Helpers{}
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%s", os.Getenv("APP_PORT")),
+		Handler: helper.Logger(router.GetRouters()),
 	}
 
 	// Connect to the DB and shut down if there's an error

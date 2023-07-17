@@ -14,7 +14,7 @@ type Auth struct {
 var AuthSchemaValidation = bson.M{
 	"$jsonSchema": bson.M{
 		"bsonType":             "object",
-		"required":             []string{"_id", "content", "user"},
+		"required":             []string{"_id", "password", "user"},
 		"additionalProperties": false,
 		"properties": bson.M{
 			"_id": bson.M{"bsonType": "objectId"},
