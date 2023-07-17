@@ -3,7 +3,7 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 )
@@ -38,7 +38,7 @@ func (h *Helpers) writeJSON(w http.ResponseWriter, data ResponseData, code int) 
 }
 
 func (h *Helpers) readJSON(r *http.Request, data *any) error {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}
