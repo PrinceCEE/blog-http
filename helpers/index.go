@@ -12,9 +12,10 @@ import (
 type Helpers struct{}
 
 type ResponseData struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
+	Success     bool   `json:"success"`
+	Message     string `json:"message"`
+	Data        any    `json:"data,omitempty"`
+	AccessToken string `json:"accessToken,omitempty"`
 }
 
 func (h *Helpers) Logger(f http.Handler) http.HandlerFunc {
@@ -37,7 +38,7 @@ func WriteJSON(w http.ResponseWriter, data ResponseData, code int) {
 
 }
 
-func ReadJSON(r *http.Request, data *any) error {
+func ReadJSON(r *http.Request, data any) error {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
