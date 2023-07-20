@@ -7,6 +7,9 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/go-playground/validator/v10"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Helpers struct{}
@@ -45,4 +48,31 @@ func ReadJSON(r *http.Request, data any) error {
 	}
 
 	return json.Unmarshal(body, data)
+}
+
+func ValidateBody(data any) error {
+	validate := validator.New()
+	err := validate.Struct(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GenerateErrorResponse(err any, msg string) ResponseData {
+	return ResponseData{
+		Success: false,
+		Message: msg,
+		Data:    err,
+	}
+}
+
+func HashPassword(pwd string) (string, error) {
+	hashPwd, err := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hashPwd), nil
 }
