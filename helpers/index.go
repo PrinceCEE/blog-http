@@ -6,9 +6,11 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -31,14 +33,13 @@ func (h *Helpers) Logger(f http.Handler) http.HandlerFunc {
 }
 
 func WriteJSON(w http.ResponseWriter, data ResponseData, code int) {
-	jsonData, err := json.Marshal(data)
+	jsonData, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("\n", err)
 	}
 
 	w.WriteHeader(code)
 	w.Write(jsonData)
-
 }
 
 func ReadJSON(r *http.Request, data any) error {
@@ -60,11 +61,10 @@ func ValidateBody(data any) error {
 	return nil
 }
 
-func GenerateErrorResponse(err any, msg string) ResponseData {
+func GenerateErrorResponse(msg string) ResponseData {
 	return ResponseData{
 		Success: false,
 		Message: msg,
-		Data:    err,
 	}
 }
 
@@ -75,4 +75,24 @@ func HashPassword(pwd string) (string, error) {
 	}
 
 	return string(hashPwd), nil
+}
+
+func SignJwtPayload(userId string) (string, error) {
+	key := []byte(os.Getenv("JWT_SECRET"))
+	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		Issuer:    "blog-http",
+		Subject:   userId,
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 7 * 24)),
+		NotBefore: jwt.NewNumericDate(time.Now()),
+	})
+	return t.SignedString(key)
+}
+
+func VerifyJwtPayload(s string) (jwt.RegisteredClaims, error) {
+	t, err := jwt.Parse(s, func(t *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+
+	return t.Claims.(jwt.RegisteredClaims), err
 }

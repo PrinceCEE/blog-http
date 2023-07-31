@@ -34,6 +34,6 @@ func main() {
 	fmt.Printf("Server listening on PORT %s\n", port)
 
 	if err := srv.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		log.Fatal("\n", err)
 	}
 }

@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	UserCollection    *mongo.Collection
-	PostCollection    *mongo.Collection
-	CommentCollection *mongo.Collection
-	AuthCollection    *mongo.Collection
+	UserCollection    *mongo.Collection = &mongo.Collection{}
+	PostCollection    *mongo.Collection = &mongo.Collection{}
+	CommentCollection *mongo.Collection = &mongo.Collection{}
+	AuthCollection    *mongo.Collection = &mongo.Collection{}
 )
 
 const (
@@ -60,6 +60,7 @@ func Connect() error {
 	}
 
 	for _, v := range collectionsConfig {
+		v := v
 		index := slices.IndexFunc(collectionNames, func(n string) bool {
 			return n == v.name
 		})
@@ -71,8 +72,7 @@ func Connect() error {
 			}
 		}
 
-		v.coll = db.Collection(v.name)
+		*v.coll = *db.Collection(v.name)
 	}
-
 	return nil
 }
