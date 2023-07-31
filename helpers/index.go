@@ -5,13 +5,16 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/gomail.v2"
 )
 
 type Helpers struct{}
@@ -21,6 +24,13 @@ type ResponseData struct {
 	Message     string `json:"message"`
 	Data        any    `json:"data,omitempty"`
 	AccessToken string `json:"accessToken,omitempty"`
+}
+
+type EmailData struct {
+	To      string
+	Subject string
+	Body    string
+	From    string
 }
 
 func (h *Helpers) Logger(f http.Handler) http.HandlerFunc {
@@ -95,4 +105,31 @@ func VerifyJwtPayload(s string) (jwt.RegisteredClaims, error) {
 	})
 
 	return t.Claims.(jwt.RegisteredClaims), err
+}
+
+func SendEmail(e EmailData) error {
+	e.From = os.Getenv("EMAIL_FROM")
+
+	m := gomail.NewMessage()
+	m.SetHeader("To", e.To)
+	m.SetHeader("From", os.Getenv("EMAIL_FROM"))
+	m.SetHeader("Subject", e.Subject)
+	m.SetBody("text/plain", e.Body)
+
+	p, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
+	host := os.Getenv("GMAIL_SMTP_HOST")
+	email := os.Getenv("EMAIL")
+	emailPwd := os.Getenv("EMAIL_PASSWORD")
+	if err != nil {
+		return err
+	}
+
+	d := gomail.NewDialer(host, p, email, emailPwd)
+	return d.DialAndSend(m)
+}
+
+func GenerateRandomCode() string {
+	min := 100000
+	max := 999999
+	return strconv.Itoa(rand.Intn(max-min+1) + min)
 }

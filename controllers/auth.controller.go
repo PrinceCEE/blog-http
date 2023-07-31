@@ -31,6 +31,10 @@ type LoginDto struct {
 	Email    string `json:"email" validate:"required,lowercase,email"`
 }
 
+type ForgotPasswordDto struct {
+	Email string `json:"email" validate:"required,email,lowercase"`
+}
+
 func (*AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		errorResponse := helpers.GenerateErrorResponse("not found")
@@ -173,9 +177,64 @@ func (*AuthController) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (*AuthController) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	// send code to the email of the user
-	// and return
-	helpers.WriteJSON(w, helpers.ResponseData{Success: true, Message: "Not Implemented"}, http.StatusNotImplemented)
+	ctx := context.Background()
+
+	if r.Method != http.MethodPost {
+		errorResponse := helpers.GenerateErrorResponse("not found")
+		helpers.WriteJSON(w, errorResponse, http.StatusNotFound)
+	}
+
+	var forgotPwdDto ForgotPasswordDto
+	helpers.ReadJSON(r, &forgotPwdDto)
+
+	err := helpers.ValidateBody(forgotPwdDto)
+	if err != nil {
+		validationErrors := ""
+		for _, v := range err.(validator.ValidationErrors) {
+			validationErrors += fmt.Sprintf("validation failed for field: %s,", strings.ToLower(v.Field()))
+		}
+		errorResponse := helpers.GenerateErrorResponse(validationErrors)
+		helpers.WriteJSON(w, errorResponse, http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	err = db.UserCollection.FindOne(ctx, bson.M{"email": forgotPwdDto.Email}).Decode(&user)
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse(err.Error())
+		helpers.WriteJSON(w, errorResponse, http.StatusUnauthorized)
+		return
+	}
+
+	resetCode := helpers.GenerateRandomCode()
+	d := helpers.EmailData{
+		To:      forgotPwdDto.Email,
+		Subject: "Password reset code",
+		Body:    fmt.Sprintf("Use the code: %s to reset your password", resetCode),
+	}
+	err = helpers.SendEmail(d)
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse(err.Error())
+		helpers.WriteJSON(w, errorResponse, http.StatusInternalServerError)
+		return
+	}
+
+	code := models.Code{
+		User:   user.ID,
+		IsUsed: false,
+		Code:   resetCode,
+	}
+	_, err = db.CodeCollection.InsertOne(ctx, code)
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse(err.Error())
+		helpers.WriteJSON(w, errorResponse, http.StatusInternalServerError)
+		return
+	}
+
+	helpers.WriteJSON(w, helpers.ResponseData{
+		Success: true,
+		Message: "Reset code sent to your email",
+	}, http.StatusOK)
 }
 
 func (*AuthController) ChangePassword(w http.ResponseWriter, r *http.Request) {

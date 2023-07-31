@@ -16,6 +16,7 @@ var (
 	PostCollection    *mongo.Collection = &mongo.Collection{}
 	CommentCollection *mongo.Collection = &mongo.Collection{}
 	AuthCollection    *mongo.Collection = &mongo.Collection{}
+	CodeCollection    *mongo.Collection = &mongo.Collection{}
 )
 
 const (
@@ -24,6 +25,7 @@ const (
 	POST_COLLECTION_NAME    = "posts"
 	COMMENT_COLLECTION_NAME = "comments"
 	AUTH_COLLECTION_NAME    = "auths"
+	CODE_COLLECTION_NAME    = "codes"
 )
 
 type collectionConfig struct {
@@ -53,6 +55,7 @@ func Connect() error {
 		{AUTH_COLLECTION_NAME, AuthCollection, models.AuthSchemaValidation},
 		{POST_COLLECTION_NAME, PostCollection, models.PostSchemaValidation},
 		{COMMENT_COLLECTION_NAME, CommentCollection, models.CommentSchemaValidation},
+		{CODE_COLLECTION_NAME, CodeCollection, models.CodeSchemaValidation},
 	}
 	collectionNames, err := db.ListCollectionNames(todoCtx, bson.M{})
 	if err != nil {
