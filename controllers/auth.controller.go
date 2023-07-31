@@ -35,6 +35,12 @@ type ForgotPasswordDto struct {
 	Email string `json:"email" validate:"required,email,lowercase"`
 }
 
+type ChangePasswordDto struct {
+	Code     string `json:"code" validate:"required,len=6"`
+	Password string `json:"password" validate:"required,min=6"`
+	Email    string `json:"email" validate:"required,email,lowercase"`
+}
+
 func (*AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		errorResponse := helpers.GenerateErrorResponse("not found")
@@ -238,6 +244,73 @@ func (*AuthController) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func (*AuthController) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	// fetch the code sent to the user
-	helpers.WriteJSON(w, helpers.ResponseData{Success: true, Message: "Not Implemented"}, http.StatusNotImplemented)
+	ctx := context.Background()
+
+	if r.Method != http.MethodPost {
+		errorResponse := helpers.GenerateErrorResponse("not found")
+		helpers.WriteJSON(w, errorResponse, http.StatusNotFound)
+	}
+
+	var changePasswordDto ChangePasswordDto
+	helpers.ReadJSON(r, &changePasswordDto)
+	err := helpers.ValidateBody(changePasswordDto)
+	if err != nil {
+		validationErrors := ""
+		for _, v := range err.(validator.ValidationErrors) {
+			validationErrors += fmt.Sprintf("validation failed for field: %s,", strings.ToLower(v.Field()))
+		}
+		errorResponse := helpers.GenerateErrorResponse(validationErrors)
+		helpers.WriteJSON(w, errorResponse, http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	err = db.UserCollection.FindOne(ctx, bson.M{"email": changePasswordDto.Email}).Decode(&user)
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse(err.Error())
+		helpers.WriteJSON(w, errorResponse, http.StatusInternalServerError)
+		return
+	}
+
+	err = db.CodeCollection.FindOneAndUpdate(ctx, bson.M{
+		"user":   user.ID,
+		"code":   changePasswordDto.Code,
+		"isUsed": false,
+	}, bson.M{
+		"$set": bson.M{
+			"isUsed": true,
+		},
+	}).Err()
+
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse(err.Error())
+		helpers.WriteJSON(w, errorResponse, http.StatusInternalServerError)
+		return
+	}
+
+	pwd, err := helpers.HashPassword(changePasswordDto.Password)
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse(err.Error())
+		helpers.WriteJSON(w, errorResponse, http.StatusInternalServerError)
+		return
+	}
+
+	err = db.AuthCollection.FindOneAndUpdate(
+		ctx, bson.M{
+			"user": user.ID,
+		},
+		bson.M{
+			"$set": bson.M{
+				"password": pwd,
+			},
+		}).Err()
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse(err.Error())
+		helpers.WriteJSON(w, errorResponse, http.StatusInternalServerError)
+		return
+	}
+	helpers.WriteJSON(w, helpers.ResponseData{
+		Success: true,
+		Message: "Password changed successfully",
+	}, http.StatusOK)
 }
