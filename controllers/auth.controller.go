@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthController struct{}
@@ -23,6 +24,11 @@ type RegisterDto struct {
 	FirstName string `json:"firstName" validate:"required,min=2"`
 	LastName  string `json:"lastName" validate:"required,min=2"`
 	Email     string `json:"email" validate:"required,lowercase,email"`
+}
+
+type LoginDto struct {
+	Password string `json:"password" validate:"required,min=6"`
+	Email    string `json:"email" validate:"required,lowercase,email"`
 }
 
 func (*AuthController) Register(w http.ResponseWriter, r *http.Request) {
@@ -108,13 +114,71 @@ func (*AuthController) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (*AuthController) Login(w http.ResponseWriter, r *http.Request) {
-	helpers.WriteJSON(w, helpers.ResponseData{Success: true, Message: "Not Implemented"}, http.StatusNotImplemented)
+	ctx := context.Background()
+
+	if r.Method != http.MethodPost {
+		errorResponse := helpers.GenerateErrorResponse("not found")
+		helpers.WriteJSON(w, errorResponse, http.StatusNotFound)
+		return
+	}
+
+	var loginDto LoginDto
+	helpers.ReadJSON(r, &loginDto)
+
+	err := helpers.ValidateBody(loginDto)
+	if err != nil {
+		validationErrors := ""
+		for _, v := range err.(validator.ValidationErrors) {
+			validationErrors += fmt.Sprintf("validation failed for field: %s,", strings.ToLower(v.Field()))
+		}
+		errorResponse := helpers.GenerateErrorResponse(validationErrors)
+		helpers.WriteJSON(w, errorResponse, http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	var auth models.Auth
+	err = db.UserCollection.FindOne(ctx, bson.M{"email": loginDto.Email}).Decode(&user)
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse(err.Error())
+		helpers.WriteJSON(w, errorResponse, http.StatusBadRequest)
+		return
+	}
+
+	err = db.AuthCollection.FindOne(ctx, bson.M{"user": user.ID}).Decode(&auth)
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse(err.Error())
+		helpers.WriteJSON(w, errorResponse, http.StatusBadRequest)
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(loginDto.Password))
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse("password or email incorrect")
+		helpers.WriteJSON(w, errorResponse, http.StatusBadRequest)
+		return
+	}
+
+	token, err := helpers.SignJwtPayload(user.ID.Hex())
+	if err != nil {
+		errorResponse := helpers.GenerateErrorResponse(err.Error())
+		helpers.WriteJSON(w, errorResponse, http.StatusUnauthorized)
+		return
+	}
+	helpers.WriteJSON(w, helpers.ResponseData{
+		Success:     true,
+		Message:     "Login successful",
+		AccessToken: token,
+	}, http.StatusOK)
 }
 
 func (*AuthController) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	// send code to the email of the user
+	// and return
 	helpers.WriteJSON(w, helpers.ResponseData{Success: true, Message: "Not Implemented"}, http.StatusNotImplemented)
 }
 
 func (*AuthController) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	// fetch the code sent to the user
 	helpers.WriteJSON(w, helpers.ResponseData{Success: true, Message: "Not Implemented"}, http.StatusNotImplemented)
 }
