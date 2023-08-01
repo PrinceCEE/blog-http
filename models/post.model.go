@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -16,8 +18,18 @@ type Post struct {
 	User      primitive.ObjectID `json:"user,omitempty" bson:"user,omitempty"`
 	Likes     []PostReactions    `json:"likes,omitempty" bson:"likes,omitempty"`
 	UnLikes   []PostReactions    `json:"unLikes,omitempty" bson:"unLikes,omitempty"`
-	CreatedAt primitive.DateTime `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
-	UpdatedAt primitive.DateTime `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+	CreatedAt time.Time          `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
+	UpdatedAt time.Time          `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+}
+
+func (p *Post) MarshalBSON() ([]byte, error) {
+	if p.CreatedAt.IsZero() {
+		p.CreatedAt = time.Now()
+	}
+	p.UpdatedAt = time.Now()
+
+	type _p Post
+	return bson.Marshal((*_p)(p))
 }
 
 var PostSchemaValidation = bson.M{

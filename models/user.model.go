@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -10,8 +12,18 @@ type User struct {
 	FirstName string             `json:"firstName,omitempty" bson:"firstName,omitempty"`
 	LastName  string             `json:"lastName,omitempty" bson:"lastName,omitempty"`
 	Email     string             `json:"email,omitempty" bson:"email,omitempty"`
-	CreatedAt primitive.DateTime `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
-	UpdatedAt primitive.DateTime `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+	CreatedAt time.Time          `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
+	UpdatedAt time.Time          `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+}
+
+func (u *User) MarshalBSON() ([]byte, error) {
+	if u.CreatedAt.IsZero() {
+		u.CreatedAt = time.Now()
+	}
+	u.UpdatedAt = time.Now()
+
+	type _u User
+	return bson.Marshal((*_u)(u))
 }
 
 var (

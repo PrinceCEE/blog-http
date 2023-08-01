@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -99,12 +101,12 @@ func SignJwtPayload(userId string) (string, error) {
 	return t.SignedString(key)
 }
 
-func VerifyJwtPayload(s string) (jwt.RegisteredClaims, error) {
-	t, err := jwt.Parse(s, func(t *jwt.Token) (interface{}, error) {
+func VerifyJwtPayload(s string) (*jwt.RegisteredClaims, error) {
+	t, err := jwt.ParseWithClaims(s, &jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 
-	return t.Claims.(jwt.RegisteredClaims), err
+	return t.Claims.(*jwt.RegisteredClaims), err
 }
 
 func SendEmail(e EmailData) error {
@@ -132,4 +134,12 @@ func GenerateRandomCode() string {
 	min := 100000
 	max := 999999
 	return strconv.Itoa(rand.Intn(max-min+1) + min)
+}
+
+func GetAccessTokenFromRequest(r *http.Request) (string, error) {
+	token := r.Header.Get("Authorization")
+	if token == "" {
+		return "", errors.New("access token missing")
+	}
+	return strings.Split(token, " ")[1], nil
 }

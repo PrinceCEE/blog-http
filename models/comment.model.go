@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -17,8 +19,18 @@ type Comment struct {
 	User      primitive.ObjectID `json:"user,omitempty" bson:"user,omitempty"`
 	Likes     []PostReactions    `json:"likes,omitempty" bson:"likes,omitempty"`
 	UnLikes   []PostReactions    `json:"unLikes,omitempty" bson:"unLikes,omitempty"`
-	CreatedAt primitive.DateTime `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
-	UpdatedAt primitive.DateTime `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+	CreatedAt time.Time          `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
+	UpdatedAt time.Time          `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+}
+
+func (c *Comment) MarshalBSON() ([]byte, error) {
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = time.Now()
+	}
+	c.UpdatedAt = time.Now()
+
+	type _c Comment
+	return bson.Marshal((*_c)(c))
 }
 
 var CommentSchemaValidation = bson.M{
